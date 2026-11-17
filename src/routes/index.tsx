@@ -55,7 +55,7 @@ function Index() {
   const log = (kind: MealKind) => {
     setEntries((e) => [...e, { kind, at: Date.now() }]);
     setNow(Date.now());
-    setCheer(CHEERS[Math.floor(Math.random() * CHEERS.length)]);
+    setCheer(CHEERS[Math.floor(Math.random() * CHEERS.length)] ?? null);
     setTimeout(() => setCheer(null), 2600);
   };
   const undo = () => setEntries((e) => e.slice(0, -1));
