@@ -33,3 +33,4 @@ use the editor.
 - Creature growth and mutation rules live in src/lib/pet.ts as pure functions with tests in pet.test.ts; the page only renders them. Why: keeps rules testable.
 - Save data stays in browser localStorage until accounts are requested. Why: no backend yet.
 - Creature visuals are a slot-based layer stack (src/lib/layers.ts); each mutation targets one slot so new art plugs in without redrawing others. Sleep phases live in src/lib/sleep.ts, diary lines in src/lib/chronicle.ts. Why: composable, testable rules.
+- Secret legendary form and achievements live in src/lib/legend.ts (pure, tested); best streak is never reset. Why: hard goal without punishing the user.

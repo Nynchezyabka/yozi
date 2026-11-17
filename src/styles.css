@@ -182,3 +182,9 @@
   background: radial-gradient(circle at 50% 30%, color-mix(in oklab, var(--primary) 18%, var(--background)), color-mix(in oklab, var(--background) 70%, black));
   filter: brightness(.7) sepia(.25);
 }
+@keyframes breathe { 0%,100% { transform: scale(.95) } 50% { transform: scale(.98, 1) translateY(2px) } }
+@utility animate-breathe { animation: breathe 4.5s ease-in-out infinite; }
+@keyframes zzz { 0% { transform: translate(0,0) scale(.6); opacity: 0 } 30% { opacity: 1 } 100% { transform: translate(18px,-40px) scale(1.2); opacity: 0 } }
+@utility animate-zzz { animation: zzz 3s ease-out infinite; }
+@keyframes legend-glow { 0%,100% { filter: drop-shadow(0 0 14px var(--primary)) } 50% { filter: drop-shadow(0 0 28px var(--accent)) } }
+@utility animate-legend { animation: legend-glow 3s ease-in-out infinite, bob 4s ease-in-out infinite; }

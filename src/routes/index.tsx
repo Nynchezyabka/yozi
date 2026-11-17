@@ -3,6 +3,10 @@ import { useCallback, useEffect, useState } from "react";
 import egg from "@/assets/pet-egg.png";
 import baby from "@/assets/pet-baby.png";
 import adult from "@/assets/pet-adult.png";
+import babySleep from "@/assets/pet-baby-sleep.png";
+import adultSleep from "@/assets/pet-adult-sleep.png";
+import legendImg from "@/assets/pet-legend.png";
+import { harmony, achievements, LEGEND_STREAK } from "@/lib/legend";
 import { IDEAS, dayKey } from "@/lib/care";
 import { ACTIONS, STAGES, TRAITS, activeTraits, environment, genes, petLine, stageOf, xpOf, type Act, type ActKind } from "@/lib/pet";
 import { phaseAt, sleepQuality } from "@/lib/sleep";
@@ -72,6 +76,12 @@ function Index() {
   const today = save.acts.filter((a) => dayKey(a.at) === dayKey(now));
   const layers = stage === "egg" ? buildLayers({ traits: [], phase, asleep, cocoon: false, eyes: 1 }) : buildLayers({ traits, phase, asleep, cocoon, eyes: g.eyes + 1 });
   const dark = asleep || phase === "night";
+  const h = harmony(save.acts, now);
+  const legend = h.legend && stage === "adult";
+  const closed = asleep || cocoon;
+  const sprite = stage === "egg" ? egg : closed ? (stage === "baby" ? babySleep : adultSleep) : legend ? legendImg : SPRITE[stage];
+  const stageName = legend ? "✦ Астральный Архи-Ёкай ✦" : STAGES.find((s) => s.id === stage)!.name;
+  const achs = achievements(save.acts, h, save.best);
 
   const line = asleep ? "Zzz… мне снится, что ты тоже спишь. Это лучший сон 🌙"
     : phase === "night" ? "Ш-ш-ш… ты чего не спишь, звёздочка? Давай погасим свет — я укутаюсь в плед."
@@ -93,6 +103,8 @@ function Index() {
         const tr = TRAITS.find((x) => x.key === k)!;
         n = log(n, t, `${tr.icon} Мутация «${tr.name}»: ${tr.desc}.`);
       }
+      if (!harmony(s.acts, t).legend && harmony(acts, t).legend) n = log(n, t, "👑 НЕВОЗМОЖНОЕ СВЕРШИЛОСЬ. 7 дней Гармонии подряд — законы физики треснули, и явился Астральный Архи-Ёкай!");
+      else if (harmony(acts, t).total > harmony(s.acts, t).total) n = log(n, t, "☯️ День Гармонии! Резонанс Силы растёт.");
       return n;
     });
     setNow(t);
@@ -132,16 +144,17 @@ function Index() {
         <div className={`lcd ${dark ? "lcd-night" : ""} p-3 transition-all duration-700`}>
           <div className="relative mx-auto w-52 h-52">
             {layers.filter((l) => l.slot === "aura").map((l, i) => <span key={l.id} className={`absolute animate-bob ${i ? "right-1 bottom-12 text-3xl" : POS.aura}`}>{l.glyph}</span>)}
-            <img src={SPRITE[stage]} alt={STAGES.find((s) => s.id === stage)!.name} width={1024} height={1024}
-              className={`w-full h-full object-contain transition-all duration-700 ${asleep || cocoon ? "opacity-70 scale-95" : phase === "drowsy" ? "" : "animate-bob"}`}
+            <img src={sprite} alt={stageName} width={1024} height={1024}
+              className={`w-full h-full object-contain transition-all duration-700 ${closed ? "opacity-80 animate-breathe" : legend ? "animate-legend" : phase === "drowsy" ? "" : "animate-bob"}`}
               style={{ filter: `hue-rotate(${g.hue}deg) saturate(${traits.includes("rest") ? 1.6 : 1}) brightness(${dark ? 0.75 : 1})` }} />
+            {asleep && ["z", "Z", "z"].map((z, i) => <span key={i} className="absolute right-8 top-10 font-pixel text-primary animate-zzz" style={{ animationDelay: `${i}s` }}>{z}</span>)}
             {layers.filter((l) => l.slot !== "aura").map((l) => <span key={l.id} className={`absolute ${POS[l.slot]} ${l.slot === "night" ? "animate-pulse" : ""}`}>{l.glyph}</span>)}
           </div>
           <p className="text-center text-sm min-h-12 mt-1">{pop ? <span className="animate-pop inline-block">{pop}</span> : line}</p>
         </div>
 
         <div className="text-xs space-y-1">
-          <div className="flex justify-between"><b className="font-pixel">{STAGES.find((s) => s.id === stage)!.name}</b><span>{g.temper}</span></div>
+          <div className="flex justify-between"><b className="font-pixel">{stageName}</b><span>{g.temper}</span></div>
           <div className="h-2.5 rounded bg-muted overflow-hidden"><div className="h-full bg-primary transition-all" style={{ width: `${next ? Math.min(100, (xp / next.from) * 100) : 100}%` }} /></div>
         </div>
 
@@ -164,6 +177,20 @@ function Index() {
             <p className="text-xs text-muted-foreground">Сегодня: {today.map((e) => ACTIONS.find((x) => x.kind === e.kind)?.icon).join(" ")}
               <button onClick={() => setSave({ ...save, acts: save.acts.slice(0, -1) })} className="underline ml-2">отменить</button></p>
           )}
+        </section>
+      )}
+      {tab === "chron" && (
+        <section className="pixel-box bg-card p-3 space-y-2">
+          <p className="font-pixel text-sm">☯️ Резонанс Силы</p>
+          <div className="flex gap-1">{Array.from({ length: LEGEND_STREAK }, (_, i) => (
+            <span key={i} className={`flex-1 h-3 rounded ${i < Math.max(h.current, 0) ? "bg-primary" : i < h.best ? "bg-primary/40" : "bg-muted"}`} />))}</div>
+          <p className="text-xs text-muted-foreground">Серия сейчас: {h.current} · лучшая: {h.best}/{LEGEND_STREAK} · всего дней Гармонии: {h.total}.
+            {h.legend ? " Секретная форма открыта навсегда 👑" : " День Гармонии = 3+ еды без пауз дольше 4 ч, сон 7+ ч и прогулка. Лучшая серия никогда не сгорает."}</p>
+          <div className="grid grid-cols-3 gap-1.5 pt-1">{achs.map((a) => (
+            <div key={a.id} title={a.desc} className={`rounded border border-border p-1.5 text-center ${a.got ? "" : "opacity-35 grayscale"}`}>
+              <div className="text-xl">{a.got || a.id !== "legend" ? a.icon : "❔"}</div>
+              <div className="text-[10px] leading-tight">{a.got || a.id !== "legend" ? a.name : "???"}</div>
+            </div>))}</div>
         </section>
       )}
       {tab === "chron" && (save.journal.length ? (
