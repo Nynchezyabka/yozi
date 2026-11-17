@@ -1,15 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import heroine from "@/assets/heroine.png";
-import { MEALS, IDEAS, REWARDS, careMood, cozyDays, lastFood, dayKey, type Entry, type MealKind } from "@/lib/care";
+import { useCallback, useEffect, useState } from "react";
+import egg from "@/assets/pet-egg.png";
+import baby from "@/assets/pet-baby.png";
+import adult from "@/assets/pet-adult.png";
+import { IDEAS, dayKey } from "@/lib/care";
+import { ACTIONS, STAGES, TRAITS, activeTraits, environment, genes, petLine, stageOf, xpOf, type Act, type ActKind } from "@/lib/pet";
+import { StarCatch } from "@/components/StarCatch";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Святилище маны — волшебный компаньон питания" },
-      { name: "description", content: "Жрица Мико мягко напоминает подкрепиться, попить воды и дарит книги и пластинки за уютные дни." },
-      { property: "og:title", content: "Святилище «Небесный перекус»" },
-      { property: "og:description", content: "Волшебный компаньон с переливами: без калорий, без давления, только забота." },
+      { title: "Астральный питомец — расти существо заботой о себе" },
+      { name: "description", content: "Странное космическое существо растёт и мутирует от твоей реальной еды, воды, сна и прогулок. Никогда не умирает." },
+      { property: "og:title", content: "Астральный питомец" },
+      { property: "og:description", content: "Тамагочи с дичинкой: генетика, мутации и мини-игры от настоящей заботы о себе." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -17,138 +21,141 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const KEY = "cozy-cafe-entries";
-const CHEERS = ["Спелл-карта «Онигири Вечности» активирована! 🍙", "Энергия восстановлена! ✨", "Ты молодец. Вкусного!", "Мико крутит ложку-посох: мана +100500 ✨"];
-
-function fmt(h: number) {
-  const m = Math.floor(h * 60);
-  return m < 60 ? `${m} мин` : `${Math.floor(m / 60)} ч ${m % 60} мин`;
-}
+const KEY = "astral-pet-v1";
+type Save = { acts: Act[]; seed: number; name: string; journal: { at: number; text: string }[]; best: number };
+const SPRITE = { egg, baby, adult };
 
 function Index() {
-  const [entries, setEntries] = useState<Entry[]>([]);
-  const [now, setNow] = useState(Date.now());
-  const [cheer, setCheer] = useState<string | null>(null);
-  const [soft, setSoft] = useState(false);
-  const [tab, setTab] = useState<"ideas" | "shelf">("ideas");
-  const [ready, setReady] = useState(false);
+  const [save, setSave] = useState<Save | null>(null);
+  const [now, setNow] = useState(0);
+  const [tab, setTab] = useState<"game" | "journal" | "ideas">("game");
+  const [pop, setPop] = useState<string | null>(null);
 
   useEffect(() => {
-    try { setEntries(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch {}
-    setSoft(localStorage.getItem("cozy-soft") === "1");
-    setReady(true);
+    let s: Save | null = null;
+    try { s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch {}
+    setSave(s ?? { acts: [], seed: Math.floor(Math.random() * 10000), name: "Бульк", journal: [], best: 0 });
+    setNow(Date.now());
     const t = setInterval(() => setNow(Date.now()), 30000);
     return () => clearInterval(t);
   }, []);
-  useEffect(() => { if (ready) localStorage.setItem(KEY, JSON.stringify(entries)); }, [entries, ready]);
-  useEffect(() => { if (ready) localStorage.setItem("cozy-soft", soft ? "1" : "0"); }, [soft, ready]);
+  useEffect(() => { if (save) localStorage.setItem(KEY, JSON.stringify(save)); }, [save]);
 
-  const last = lastFood(entries);
-  const hours = last ? (now - last) / 3600_000 : null;
-  const mood = careMood(hours);
-  const today = entries.filter((e) => dayKey(e.at) === dayKey(now));
-  const water = today.filter((e) => e.kind === "water").length;
-  const days = cozyDays(entries, now);
-  const unlocked = REWARDS.slice(0, Math.min(days, REWARDS.length));
-  const ideas = useMemo(() => IDEAS.filter((i) => !soft || i.soft), [soft]);
+  const onGame = useCallback((score: number) => {
+    setSave((s) => s && { ...s, best: Math.max(s.best, score) });
+    setPop(score >= 15 ? "Я переливаюсь всеми цветами! ✨" : "Вкусные звёзды, спасибо 💫");
+  }, []);
 
-  const log = (kind: MealKind) => {
-    setEntries((e) => [...e, { kind, at: Date.now() }]);
-    setNow(Date.now());
-    setCheer(CHEERS[Math.floor(Math.random() * CHEERS.length)] ?? null);
-    setTimeout(() => setCheer(null), 2600);
+  if (!save) return <main className="min-h-screen" />;
+
+  const xp = xpOf(save.acts);
+  const stage = stageOf(xp);
+  const env = environment(save.acts, now);
+  const traits = activeTraits(env);
+  const g = genes(save.seed);
+  const food = save.acts.filter((a) => ["snack", "lunch", "warm", "soft"].includes(a.kind));
+  const lastFood = food.length ? Math.max(...food.map((a) => a.at)) : null;
+  const hours = lastFood ? (now - lastFood) / 3600_000 : null;
+  const cocoon = stage !== "egg" && hours !== null && hours > 5;
+  const next = STAGES.find((s) => s.from > xp);
+  const today = save.acts.filter((a) => dayKey(a.at) === dayKey(now));
+
+  const act = (kind: ActKind) => {
+    const t = Date.now();
+    setSave((s) => {
+      if (!s) return s;
+      const acts = [...s.acts, { kind, at: t }];
+      const journal = [...s.journal];
+      const before = stageOf(xpOf(s.acts)), after = stageOf(xpOf(acts));
+      if (before !== after) journal.unshift({ at: t, text: `Метаморфоза! Теперь это ${STAGES.find((x) => x.id === after)!.name}.` });
+      const was = activeTraits(environment(s.acts, t));
+      for (const k of activeTraits(environment(acts, t))) if (!was.includes(k)) {
+        const tr = TRAITS.find((x) => x.key === k)!;
+        journal.unshift({ at: t, text: `Мутация: ${tr.icon} ${tr.name} (${tr.desc}).` });
+      }
+      return { ...s, acts, journal: journal.slice(0, 40) };
+    });
+    setNow(t);
+    setPop(["Ням, энергия!", "Бульк-бульк ✨", "Чувствую рост…", "Спасибо, человек 💜"][Math.floor(Math.random() * 4)]!);
+    setTimeout(() => setPop(null), 2400);
   };
-  const undo = () => setEntries((e) => e.slice(0, -1));
-  const meals = soft ? [...MEALS].sort((a) => (a.kind === "soft" ? -1 : 0)) : MEALS;
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 space-y-6">
-      <header className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl md:text-3xl text-wood">✦ Святилище «Небесный перекус» ✦</h1>
-        <button onClick={() => setSoft(!soft)} className={`pixel-box px-3 py-2 text-sm font-semibold ${soft ? "bg-accent text-accent-foreground" : "bg-card"}`}>
-          🦷 Мягкая еда: {soft ? "вкл" : "выкл"}
-        </button>
+      <header className="flex items-end justify-between flex-wrap gap-2">
+        <div>
+          <h1 className="text-2xl md:text-3xl text-wood">✦ Астральный питомец ✦</h1>
+          <p className="text-sm text-muted-foreground">Растёт от твоей настоящей заботы о себе. Никогда не умирает.</p>
+        </div>
+        <input value={save.name} onChange={(e) => setSave({ ...save, name: e.target.value.slice(0, 20) })}
+          aria-label="Имя существа" className="pixel-box bg-card px-3 py-1 font-pixel w-40 text-center" />
       </header>
 
-      <section className="grid md:grid-cols-[260px_1fr] gap-6 items-center pixel-box bg-card p-5">
-        <img src={heroine} alt="Жрица Мико — хранительница маны" width={1024} height={1024} className="w-48 md:w-60 mx-auto animate-bob" />
+      <section className="grid md:grid-cols-[320px_1fr] gap-6 items-center pixel-box bg-card p-5">
+        <div className="relative mx-auto w-64 h-64">
+          {traits.includes("water") && <div className="absolute inset-0 text-2xl animate-bob pointer-events-none"><span className="absolute left-2 top-6">🫧</span><span className="absolute right-4 top-2">🫧</span><span className="absolute right-0 bottom-16">🫧</span></div>}
+          {traits.includes("air") && stage !== "egg" && <span className="absolute left-1/2 -translate-x-1/2 -top-2 text-4xl z-10">🍄</span>}
+          <img src={SPRITE[stage]} alt={STAGES.find((s) => s.id === stage)!.name} width={1024} height={1024}
+            className={`w-full h-full object-contain ${cocoon ? "opacity-60 grayscale-[40%]" : "animate-bob"}`}
+            style={{ filter: `hue-rotate(${g.hue}deg) saturate(${traits.includes("rest") ? 1.6 : 1}) drop-shadow(0 0 ${traits.includes("nourish") ? 24 : 6}px var(--primary))` }} />
+          {traits.includes("rest") && <span className="absolute right-6 bottom-6 text-2xl animate-pulse">✨</span>}
+          {cocoon && <span className="absolute inset-x-0 bottom-0 text-center text-xs font-pixel">💤 в коконе</span>}
+        </div>
         <div className="space-y-4">
-          <div className="relative pixel-box bg-background p-4 text-lg">
-            {cheer ? <span className="animate-pop inline-block">{cheer}</span> : mood.text}
-            {soft && !cheer && <p className="mt-2 text-sm text-muted-foreground">Зубки ноют? Сегодня — смузи, супы-пюре и суфле. Береги себя 💗</p>}
+          <div className="pixel-box bg-background p-4 text-lg min-h-16">
+            {pop ? <span className="animate-pop inline-block">{pop}</span> : petLine(hours, stage)}
           </div>
-          <div>
-            <div className="flex justify-between text-sm font-semibold mb-1">
-              <span className="font-pixel">HP / Мана</span>
-              <span>{hours === null ? "ещё не заправлялась" : `подзарядка ${fmt(hours)} назад`}</span>
-            </div>
-            <div className="h-5 pixel-box bg-muted overflow-hidden p-0">
-              <div className="h-full bg-primary transition-all duration-700" style={{ width: `${mood.level * 100}%` }} />
-            </div>
+          <div className="text-sm space-y-1">
+            <p><b className="font-pixel">{STAGES.find((s) => s.id === stage)!.name}</b> · характер: {g.temper} · глаз: {stage === "egg" ? "?" : g.eyes + 1}</p>
+            <div className="h-3 pixel-box bg-muted p-0 overflow-hidden"><div className="h-full bg-primary transition-all" style={{ width: `${next ? Math.min(100, (xp / next.from) * 100) : 100}%` }} /></div>
+            <p className="text-muted-foreground">{next ? `до стадии «${next.name}»: ${next.from - xp} очков роста` : "Полностью вырос. Мутации продолжаются!"}</p>
           </div>
-          <div className="flex items-center gap-1 text-sm">
-            <span className="font-pixel mr-2">Вода:</span>
-            {Array.from({ length: 8 }).map((_, i) => <span key={i} className={i < water ? "" : "opacity-25"}>💧</span>)}
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            {TRAITS.map((t) => (
+              <div key={t.key} title={t.desc} className={`rounded-md border-2 border-input p-2 ${traits.includes(t.key) ? "bg-accent" : "bg-background"}`}>
+                <div className="flex justify-between"><span>{t.icon} {t.name}</span><span className="font-pixel">{Math.round(env[t.key] * 100)}%</span></div>
+                <div className="h-1.5 bg-muted rounded mt-1 overflow-hidden"><div className="h-full bg-primary" style={{ width: `${env[t.key] * 100}%` }} /></div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       <section>
-        <h2 className="text-xl mb-3">Восстановить энергию</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {meals.map((m) => (
-            <button key={m.kind} onClick={() => log(m.kind)}
-              className={`pixel-box p-4 flex flex-col items-center gap-1 transition-transform hover:-translate-y-1 active:translate-y-0.5 ${m.kind === "water" ? "bg-mana/30" : m.kind === "soft" && soft ? "bg-accent" : "bg-card"}`}>
-              <span className="text-4xl">{m.icon}</span>
-              <span className="font-semibold text-sm text-center">{m.label}</span>
-              <span className="font-pixel text-xs text-primary">{m.hp}</span>
+        <h2 className="text-xl mb-1">Что ты сделала для себя?</h2>
+        <p className="text-sm text-muted-foreground mb-3">Каждое действие питает существо. Среда за 3 дня решает, какие мутации проявятся.</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {ACTIONS.map((a) => (
+            <button key={a.kind} onClick={() => act(a.kind)}
+              className="pixel-box bg-card p-3 flex flex-col items-center gap-1 hover:-translate-y-1 active:translate-y-0.5 transition-transform">
+              <span className="text-3xl">{a.icon}</span><span className="font-semibold text-sm text-center">{a.label}</span>
             </button>
           ))}
         </div>
         {today.length > 0 && (
-          <p className="mt-3 text-sm text-muted-foreground">
-            Сегодня: {today.map((e) => MEALS.find((m) => m.kind === e.kind)?.icon).join(" ")}{" "}
-            <button onClick={undo} className="underline ml-2">отменить последнее</button>
-          </p>
+          <p className="mt-3 text-sm text-muted-foreground">Сегодня: {today.map((e) => ACTIONS.find((x) => x.kind === e.kind)?.icon).join(" ")}
+            <button onClick={() => setSave({ ...save, acts: save.acts.slice(0, -1) })} className="underline ml-3">отменить последнее</button></p>
         )}
       </section>
 
       <section className="pixel-box bg-card p-5">
-        <div className="flex gap-2 mb-4">
-          {(["ideas", "shelf"] as const).map((t) => (
-            <button key={t} onClick={() => setTab(t)} className={`font-pixel px-3 py-1 rounded ${tab === t ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-              {t === "ideas" ? "🫙 Копилка идей" : "📚 Моя полка"}
-            </button>
+        <div className="flex gap-2 mb-4 flex-wrap">
+          {([["game", "🌠 Ловля звёзд"], ["journal", "📜 Гримуар мутаций"], ["ideas", "🫙 Перекусы"]] as const).map(([k, l]) => (
+            <button key={k} onClick={() => setTab(k)} className={`font-pixel px-3 py-1 rounded ${tab === k ? "bg-primary text-primary-foreground" : "bg-muted"}`}>{l}</button>
           ))}
         </div>
-        {tab === "ideas" ? (
+        {tab === "game" && <><StarCatch onDone={onGame} />{save.best > 0 && <p className="text-xs text-center text-muted-foreground mt-2">Рекорд: {save.best}</p>}</>}
+        {tab === "journal" && (save.journal.length ? (
+          <ul className="space-y-2">{save.journal.map((j, i) => <li key={i} className="rounded border-2 border-input bg-background p-2 text-sm"><span className="text-muted-foreground mr-2">{new Date(j.at).toLocaleDateString("ru-RU")}</span>{j.text}</li>)}</ul>
+        ) : <p className="text-muted-foreground">Пока пусто. Первые метаморфозы появятся здесь.</p>)}
+        {tab === "ideas" && (
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {ideas.map((i) => (
-              <div key={i.t} className="rounded-lg border-2 border-input bg-background p-3">
-                <p className="font-bold">{i.t}</p>
-                <p className="text-sm text-muted-foreground">{i.d}</p>
-                {i.soft && <span className="text-xs text-accent-foreground bg-accent rounded px-2 mt-1 inline-block">мягко для брекетов</span>}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div>
-            <p className="text-sm text-muted-foreground mb-3">
-              Уютных дней (3+ подзарядки без пауз дольше 4 часов): <b className="text-foreground">{days}</b>. За каждый на полке появляется что-то новое.
-            </p>
-            <div className="bg-wood/20 rounded-lg p-4 border-b-8 border-wood grid grid-cols-5 gap-3 min-h-28">
-              {REWARDS.map((r, i) => (
-                <div key={i} title={i < unlocked.length ? r.name : "Ещё впереди"} className={`flex flex-col items-center text-center ${i < unlocked.length ? "animate-pop" : "opacity-20 grayscale"}`}>
-                  <span className="text-4xl">{r.icon}</span>
-                  <span className="text-[11px] leading-tight mt-1">{i < unlocked.length ? r.name : "?"}</span>
-                </div>
-              ))}
-            </div>
+            {IDEAS.map((i) => <div key={i.t} className="rounded-lg border-2 border-input bg-background p-3"><p className="font-bold">{i.t}</p><p className="text-sm text-muted-foreground">{i.d}</p></div>)}
           </div>
         )}
       </section>
 
-      <footer className="text-center text-xs text-muted-foreground pb-4">Здесь нет калорий, весов и «плохой» еды. Только забота о тебе 🌙</footer>
+      <footer className="text-center text-xs text-muted-foreground pb-4">Без калорий, весов и штрафов. Пропустила день — существо просто дремлет в коконе 🌙</footer>
     </main>
   );
 }

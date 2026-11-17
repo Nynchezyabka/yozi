@@ -28,3 +28,7 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+- Creature growth and mutation rules live in src/lib/pet.ts as pure functions with tests in pet.test.ts; the page only renders them. Why: keeps rules testable.
+- Save data stays in browser localStorage until accounts are requested. Why: no backend yet.
