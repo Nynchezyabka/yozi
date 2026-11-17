@@ -47,7 +47,7 @@ export function Oracle({ meals, now }: { meals: number[]; now: number }) {
     setS({ ...s, msgs }); setInput(""); setErr(""); setBusy(true);
     try {
       const a = await chat(ep, SYSTEM(contextFor(p, meals, s.measures, Date.now())), msgs.slice(-12));
-      setS((x) => x && { ...x, msgs: [...msgs, { role: "assistant", content: a }].slice(-40) });
+      setS((x) => x && { ...x, msgs: [...msgs, { role: "assistant" as const, content: a }].slice(-40) });
     } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
     setBusy(false);
   };
