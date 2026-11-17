@@ -1,15 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import cat from "@/assets/cat-barista.png";
+import heroine from "@/assets/heroine.png";
 import { MEALS, IDEAS, REWARDS, careMood, cozyDays, lastFood, dayKey, type Entry, type MealKind } from "@/lib/care";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Уютная кофейня энергии — компаньон питания" },
-      { name: "description", content: "Пиксельный кот-бариста мягко напоминает подкрепиться, попить воды и дарит книги и пластинки за уютные дни." },
-      { property: "og:title", content: "Уютная кофейня энергии" },
-      { property: "og:description", content: "Бережный lo-fi компаньон: без калорий, без давления, только забота." },
+      { title: "Святилище маны — волшебный компаньон питания" },
+      { name: "description", content: "Жрица Мико мягко напоминает подкрепиться, попить воды и дарит книги и пластинки за уютные дни." },
+      { property: "og:title", content: "Святилище «Небесный перекус»" },
+      { property: "og:description", content: "Волшебный компаньон с переливами: без калорий, без давления, только забота." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
 });
 
 const KEY = "cozy-cafe-entries";
-const CHEERS = ["Мурр, спасибо, что позаботилась о себе 💛", "Энергия восстановлена! ✨", "Ты молодец. Вкусного!", "Кот-бариста одобрительно мурлычет ☕"];
+const CHEERS = ["Спелл-карта «Онигири Вечности» активирована! 🍙", "Энергия восстановлена! ✨", "Ты молодец. Вкусного!", "Мико крутит ложку-посох: мана +100500 ✨"];
 
 function fmt(h: number) {
   const m = Math.floor(h * 60);
@@ -64,14 +64,14 @@ function Index() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 space-y-6">
       <header className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl md:text-3xl text-wood">☕ Кофейня «Тёплая глава»</h1>
+        <h1 className="text-2xl md:text-3xl text-wood">✦ Святилище «Небесный перекус» ✦</h1>
         <button onClick={() => setSoft(!soft)} className={`pixel-box px-3 py-2 text-sm font-semibold ${soft ? "bg-accent text-accent-foreground" : "bg-card"}`}>
           🦷 Мягкая еда: {soft ? "вкл" : "выкл"}
         </button>
       </header>
 
       <section className="grid md:grid-cols-[260px_1fr] gap-6 items-center pixel-box bg-card p-5">
-        <img src={cat} alt="Пиксельный кот-бариста" width={816} height={816} className="w-48 md:w-60 mx-auto animate-bob" style={{ imageRendering: "pixelated" }} />
+        <img src={heroine} alt="Жрица Мико — хранительница маны" width={1024} height={1024} className="w-48 md:w-60 mx-auto animate-bob" />
         <div className="space-y-4">
           <div className="relative pixel-box bg-background p-4 text-lg">
             {cheer ? <span className="animate-pop inline-block">{cheer}</span> : mood.text}

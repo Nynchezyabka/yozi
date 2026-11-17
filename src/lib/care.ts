@@ -43,11 +43,11 @@ export function lastFood(entries: Entry[]): number | null {
 }
 
 export function careMood(hoursSince: number | null) {
-  if (hoursSince === null) return { level: 0, text: "Привет! Начнём день с чего-нибудь вкусного? Я заварю какао ☕" };
+  if (hoursSince === null) return { level: 0, text: "Привет! Начнём день с чего-нибудь вкусного? Без маны даже данмаку не увернёшься 🌸" };
   if (hoursSince < 1.5) return { level: 1, text: "Энергия полна ✨ Можно спокойно читать дальше." };
   if (hoursSince < 3) return { level: 0.7, text: "Всё уютно. Не забудь про глоток воды между главами 💧" };
   if (hoursSince < GAP_HOURS) return { level: 0.4, text: "Пора подкрепиться перед новой каткой или главой 🎮📖" };
-  return { level: 0.15, text: "Мурр, кажется, мана на исходе. Может, маленький перекус? Хоть пара печенек — уже хорошо 🍪" };
+  return { level: 0.15, text: "Тревога в Генсокё: мана на исходе! Может, маленький перекус? Хоть пара печенек — уже хорошо 🍪" };
 }
 
 export const REWARDS = [
