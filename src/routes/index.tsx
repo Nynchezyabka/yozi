@@ -13,6 +13,7 @@ import { phaseAt, sleepQuality } from "@/lib/sleep";
 import { chronicleLine } from "@/lib/chronicle";
 import { buildLayers, type Layer } from "@/lib/layers";
 import { StarCatch } from "@/components/StarCatch";
+import { Oracle } from "@/components/Oracle";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -35,7 +36,7 @@ const POS: Record<Layer["slot"], string> = {
   bg: "inset-0", aura: "left-1 top-4 text-2xl", body: "", eyes: "left-1/2 -translate-x-1/2 top-[30%] text-lg",
   head: "left-1/2 -translate-x-1/2 -top-3 text-4xl", hands: "right-2 bottom-10 text-3xl -rotate-12", night: "right-1 top-1 text-3xl",
 };
-type Tab = "care" | "chron" | "play" | "ideas";
+type Tab = "care" | "chron" | "play" | "ideas" | "oracle";
 
 function Index() {
   const [save, setSave] = useState<Save | null>(null);
@@ -124,11 +125,11 @@ function Index() {
     setNow(t);
   };
 
-  const tabs: [Tab, string, string][] = [["care", "🍙", "Забота"], ["chron", "📜", "Хроники"], ["play", "🌠", "Игры"], ["ideas", "🫙", "Идеи"]];
+  const tabs: [Tab, string, string][] = [["care", "🍙", "Забота"], ["chron", "📜", "Хроники"], ["play", "🌠", "Игры"], ["ideas", "🫙", "Идеи"], ["oracle", "🔮", "Совет"]];
 
   return (
     <main className="mx-auto max-w-md px-3 py-4 pb-24 space-y-4">
-      <div className="device p-4 space-y-3">
+      <div className="device p-4 space-y-3 print:hidden">
         <div className="flex items-center justify-between gap-2">
           <input value={save.name} onChange={(e) => setSave({ ...save, name: e.target.value.slice(0, 20) })} aria-label="Имя существа"
             className="bg-transparent font-pixel text-lg w-32 outline-none" />
@@ -202,8 +203,10 @@ function Index() {
       {tab === "play" && <div className="pixel-box bg-card p-3"><StarCatch onDone={onGame} />{save.best > 0 && <p className="text-xs text-center text-muted-foreground mt-2">Рекорд: {save.best}</p>}</div>}
       {tab === "ideas" && <div className="grid grid-cols-2 gap-2">{IDEAS.map((i) => <div key={i.t} className="pixel-box bg-card p-2"><p className="font-bold text-sm">{i.t}</p><p className="text-xs text-muted-foreground">{i.d}</p></div>)}</div>}
 
-      <nav className="fixed bottom-0 inset-x-0 z-20 bg-card/95 backdrop-blur border-t-4 border-border">
-        <div className="mx-auto max-w-md grid grid-cols-4">
+      {tab === "oracle" && <Oracle meals={food.map((a) => a.at)} now={now} />}
+
+      <nav className="fixed print:hidden bottom-0 inset-x-0 z-20 bg-card/95 backdrop-blur border-t-4 border-border">
+        <div className="mx-auto max-w-md grid grid-cols-5">
           {tabs.map(([k, ic, l]) => (
             <button key={k} onClick={() => setTab(k)} className={`py-2 flex flex-col items-center text-xs font-pixel ${tab === k ? "text-primary" : "text-muted-foreground"}`}>
               <span className="text-xl">{ic}</span>{l}</button>

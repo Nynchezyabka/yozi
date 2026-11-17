@@ -34,3 +34,5 @@ use the editor.
 - Save data stays in browser localStorage until accounts are requested. Why: no backend yet.
 - Creature visuals are a slot-based layer stack (src/lib/layers.ts); each mutation targets one slot so new art plugs in without redrawing others. Sleep phases live in src/lib/sleep.ts, diary lines in src/lib/chronicle.ts. Why: composable, testable rules.
 - Secret legendary form and achievements live in src/lib/legend.ts (pure, tested); best streak is never reset. Why: hard goal without punishing the user.
+- Health profile, pauses and doctor sheet live in src/lib/health.ts (pure, tested). Why: medical-ish rules must stay testable.
+- AI helper is bring-your-own-key, called directly from the browser (src/lib/ai.ts, same scheme as Focus Cash Keeper); the app builds as a static SPA (spa mode + postbuild index.html) for Layero. Why: no server, user-chosen model.

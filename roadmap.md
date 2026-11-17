@@ -1,6 +1,6 @@
-# Roadmap
-- [x] Closed eyes + breathing + zZz while asleep
-- [x] Rare overcoming: harmony days, 7-day secret form, achievements
-- [ ] Characters & slot layering design (discuss with user first)
-- [ ] Mini-games: Tea Alchemy, Star Resonance rhythm
-- [ ] Chronicles v2 (Godville-style, more lines)
+- [x] Sleep visuals, prestige/Гримуар
+- [x] Помощник «Совет»: профиль здоровья, кетоны/датчик, лист для врача, свой ИИ-ключ
+- [x] Static build for Layero
+- [ ] Обсудить персонажей и слои (ждём обсуждения с пользователем)
+- [ ] «Чайная алхимия», ритм-игра «Звёздный Резонанс»
+- [ ] Нарисованные мутации вместо значков

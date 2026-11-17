@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "postbuild": "node -e \"const f=require('fs');const s='dist/client/_shell.html';if(f.existsSync(s)){f.copyFileSync(s,'dist/client/index.html');f.copyFileSync(s,'dist/client/404.html')}\""
   },
   "overrides": {
     "rolldown": "1.2.1"
